@@ -1,24 +1,40 @@
+//111111111
+//100000001
+//100000001
+//100000001
+//100000001
+//100000001
+//100000001
+//111111111
+
+
+//HACER LAS FUNCIONES QUE MANAGEEN EN MEMORIA LOS PATH Y LOS COLORES EN MLX
 #include "./cub3d.h"
 
-int	resolution_Y = 320;
-int	resolution_X = 500;
+int	resolution_Y = 1080;
+int	resolution_X = 1920;
+int R;
+int G;
+int B;
 
 int main()
 {
 	v_global	vars;
 
 	vars.position_X = 4;
-	vars.position_Y = 2;
+	vars.position_Y = 4;
 	vars.pi = M_PI;
-	vars.dir = 0;
-	vars.fov = 60;
+	vars.one_rad = M_PI / 180;
+	vars.dir =M_PI / 2;
+	vars.fov = 100;
 	vars.image = 0;
 	vars.ray_dir = 0;
 	//vars_initialize(vars);
 	vars.mlx_int = mlx_init();
 	vars.screen = mlx_new_window(vars.mlx_int, resolution_X, resolution_Y, "screen");
 	//move(&vars);
-	vars.map = ft_cut_map("111111111\n100000001\n100000001\n100001101\n100000001\n100000001\n100000001\n111111111");
+	vars.map = ft_cut_map(
+	   "111111111\n111111111\n11010000011\n11000000011\n11001100011\n11000000011\n11000000011\n11000000011\n111111111\n111111111");
 	mlx_hook(vars.screen, 2, 1L<<0, deal_keys, &vars);
 	//mlx_hook(vars.screen, 3, 1L<<1, deal_key_release, &vars);
 	//mlx_loop_hook(vars.mlx_int, drawray_3D, &vars);
@@ -72,41 +88,11 @@ void	*wall(char *img_data, int R, int G, int B, int i, int j)
 	return(0);
 }
 
-int		deal_key_press(int key, v_global *vars)
-{
-	if(key == 0)
-		vars->key_a = 1;
-	if(key == 1)
-		vars->key_s = 1;
-	if(key == 2)
-		vars->key_d = 1;
-	if(key == 13)
-		vars->key_w = 1;
-	if(key == 65307)
-		vars->key_esc = 1;
-	return (0);
-}
-
-int		deal_key_release(int key, v_global *vars)
-{
-	if(key == 0)
-		vars->key_a = 0;
-	if(key == 1)
-		vars->key_s = 0;
-	if(key == 2)
-		vars->key_d = 0;
-	if(key == 13)
-		vars->key_w = 0;
-	if(key == 65307)
-		vars->key_esc = 0;
-	return (0);
-}
-
 int		deal_keys(int key, v_global *vars)
 {
 	mlx_clear_window(vars->mlx_int, vars->screen);
 	if(key == 0)
-		vars->dir += 0.1745;
+		vars->dir += vars->pi / 18;
 	if(key == 1)
 	{
 		if(vars->map[(int)(vars->position_Y)]
@@ -117,7 +103,7 @@ int		deal_keys(int key, v_global *vars)
 			vars->position_Y += (sin(vars->dir) / 10);
 	}	
 	if(key == 2)
-		vars->dir -= 0.1745;
+		vars->dir -= vars->pi / 18;
 	if(key == 13)
 	{
 		if(vars->map[(int)(vars->position_Y)]
@@ -194,42 +180,141 @@ char	*ft_strldup(const char *s, int i)
 	return (str);
 }
 
+int horizontal_coll(v_global *vars)
+{
+	double ray_x;
+	double ray_y;
+
+	ray_x = vars->position_X;
+	ray_y = vars->position_Y;
+	if (vars->ray_dir > 0 && vars->ray_dir < vars->pi)
+		ray_y =  (int)ray_y - 0.00000000001;
+	else
+		ray_y =  (int)ray_y + 1;
+	ray_x += (vars->position_Y - ray_y) / (tan(vars->ray_dir) + 0.00000001);
+	//necesito el tamaño del mapa para esta parte
+	while ((int)ray_y <= 9 && (int)ray_x <= 10 && (int)ray_y >= 0 && (int)ray_x >= 0)
+	{
+		if (vars->map[(int)ray_y][(int)ray_x] == '1')
+		{
+			return (calc_dist(ray_x, ray_y, vars));
+		}
+		if (vars->ray_dir > 0 && vars->ray_dir < vars->pi)
+			ray_y -= 1.00000000001;
+		else
+			ray_y += 1;
+		if (vars->ray_dir > 0 && vars->ray_dir < vars->pi)
+			ray_x += 1 / tan(vars->ray_dir);
+		else
+			ray_x -= 1 / tan(vars->ray_dir);
+	}
+	return (-1);
+}
+
+int vertical_coll(v_global *vars)
+{
+	double ray_x;
+	double ray_y;
+
+	ray_x = vars->position_X;
+	ray_y = vars->position_Y;
+	if (vars->ray_dir < vars->pi / 2 || vars->ray_dir > vars->pi * 1.5)
+		ray_x = 1 + (int)ray_x;
+	else
+		ray_x = (int)(ray_x) - 0.00000000001;
+	ray_y += (vars->position_X - ray_x) * tan(vars->ray_dir);
+	//necesito el tamaño del mapa para esta parte
+	while ((int)ray_y <= 9 && (int)ray_x <= 10 && (int)ray_y >= 0 && (int)ray_x >= 0)
+	{
+		if (vars->map[(int)ray_y][(int)ray_x] == '1')
+		{
+			return (calc_dist(ray_x, ray_y, vars));
+		}
+		if (vars->ray_dir < vars->pi / 2 || vars->ray_dir > vars->pi * 1.5)
+			ray_x += 1;
+		else
+			ray_x -= 1.00000000001;
+		if (vars->ray_dir < vars->pi / 2 || vars->ray_dir > vars->pi * 1.5)
+			ray_y -= tan(vars->ray_dir);
+		else
+			ray_y += tan(vars->ray_dir);
+	}
+	return (-1);
+}
+
+float to_degree(float angle)
+{
+	return (angle * 180 / M_PI);
+}
+
 int	drawray_3D(v_global *vars)
 {
 	int	nbr_ray;
-	double	ray_x;
-	double	ray_y;
+	int dist;
+	int dist2;	
 
 	nbr_ray = 0;
-	ray_x = vars->position_X;
-	ray_y = vars->position_Y;
-	vars->ray_dir = vars->dir + (vars->pi / 180 * (vars->fov / 2));
-	if(vars->ray_dir > (2 * vars->pi))
-		vars->ray_dir -= (2 * vars->pi);
+	dist = 0;
+	dist2 = 0;
 	create_img(vars);
 	while(nbr_ray < resolution_X)
 	{
-		if(vars->ray_dir < 0)
-			vars->ray_dir += (2 * vars->pi);
-		ray_x = vars->position_X;
-		ray_y = vars->position_Y;
-		//ft_printf("/%i", (int)(ray_dir * 100));
-		while(vars->map[(int)(ray_y - (sin(vars->ray_dir) / 100))][(int)(ray_x + (cos(vars->ray_dir) / 100))] != '1')
-		{
-			ray_x += cos(vars->ray_dir) / 100;
-			ray_y -= sin(vars->ray_dir) / 100;
-		}
-		ft_printf("x=%i,y=%i,dir=%i\n", (int)vars->position_X, (int)vars->position_Y, (int)vars->dir);
-		printf("(%i)x=%fy=%f\n", nbr_ray, ray_x, ray_y);
-		calc_dist(nbr_ray,  ray_x, ray_y, vars);
-		vars->ray_dir -= (vars->pi / 180) / (resolution_X / vars->fov);
+		vars->ray_dir = vars->dir - atan(tan((M_PI / 2) / 2.0) * (2.0 * nbr_ray / resolution_X - 1.0));
+		vars->ray_dir = vars->ray_dir < 0 ? (M_PI * 2) + vars->ray_dir : vars->ray_dir;
+		vars->ray_dir = vars->ray_dir > (M_PI * 2) ? vars->ray_dir - (M_PI * 2) : vars->ray_dir;
+		if (vars->ray_dir == M_PI || vars->ray_dir == 0 || vars->ray_dir == (M_PI * 1.5) || vars->ray_dir == (M_PI / 2))
+			vars->ray_dir += 0.0000001;
+		dist = vertical_coll(vars);
+		dist2 = horizontal_coll(vars);
+		if ((dist < dist2 && dist2 > 0) || dist < 0)
+			dist = dist2;
+		draw_vertical(vars, nbr_ray, dist);
 		nbr_ray += 1;
 	}
 	mlx_put_image_to_window(vars->mlx_int, vars->screen, vars->image, 0, 0);
 	return(0);
 }
 
-void	calc_dist(int nbr_ray, double ray_x, double ray_y, v_global *vars)
+void rgb_set(double ray_x, double ray_y, v_global *vars)
+{
+	//horizontal
+	//printf("a\n");
+	if ((ray_x - 0.99999999999) == (int)ray_x || (ray_x - (int)ray_x) == 0)
+	{
+		//oeste
+		if (vars->ray_dir > M_PI / 2 && vars->dir < (M_PI * 1.5))
+		{
+			R = 252;
+			G = 3;
+			B = 3;
+		}
+		else
+		{
+			R = 252;
+			G = 252;
+			B = 3;
+		}
+	}
+
+	else if (ray_y  == 0.99999999999 || (ray_y - (int)ray_y) == 0 )
+	{
+		//arriba
+		if (vars->ray_dir >  M_PI && vars->dir < 0)
+		{
+			R = 36;
+			G = 252;
+			B = 3;
+		}
+		else
+		{
+			R = 3;
+			G = 252;
+			B = 236;
+		}
+	}
+}
+
+int	calc_dist(double ray_x, double ray_y, v_global *vars)
 {
 	double	dist;
 	double	seg_x;
@@ -247,12 +332,8 @@ void	calc_dist(int nbr_ray, double ray_x, double ray_y, v_global *vars)
 	if (not_feye > (2 * vars->pi))
 		not_feye -= 2 * vars->pi;
 	dist = dist * cos(not_feye);
-	printf("%i\n", (int)(dist));
-	while(i < (resolution_X / vars->fov))
-	{
-		draw_vertical(vars, nbr_ray, (resolution_Y)/(dist));
-		i++;
-	}
+	rgb_set(ray_x, ray_y, vars);
+	return ((resolution_Y)/(dist));
 }
 
 int	draw_pixel(char *img_addr, int r, int g, int b)
@@ -272,11 +353,10 @@ int	draw_vertical(v_global *vars, int x, int dist)
 	if (dist > resolution_Y || dist <= 0)
 		dist = resolution_Y - 1;
 	i = dist;
-	//printf ("<%i>", (resolution_Y - i) / 2 , );
 	pixel_addr = pixel_addr + ((((resolution_Y - i) / 2) * ((resolution_X) * 4)));
-	while(i >= 0)
+	while(i > 0)
 	{
-		draw_pixel(pixel_addr, 0, 153, 0);
+		draw_pixel(pixel_addr, R, G, B);
 		i--;
 		pixel_addr += (resolution_X * 4);
 		if (!pixel_addr)
@@ -292,7 +372,8 @@ int	create_img(v_global *vars)
 	int			endian;
 	
 	if(vars->image != 0)
-		mlx_destroy_image(vars->mlx_int, vars->image);	
+		mlx_destroy_image(vars->mlx_int, vars->image);
+	mlx_clear_window(vars->mlx_int, vars->screen);
 	vars->image = mlx_new_image(vars->mlx_int, resolution_X, resolution_Y);	
 	vars->img_data = mlx_get_data_addr(vars->image, &bpp, &size_line, &endian);
 	return(1);

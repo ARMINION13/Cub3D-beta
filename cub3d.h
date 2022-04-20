@@ -9,6 +9,7 @@ typedef struct s_global
 	double	position_X;
 	double	position_Y;
 	double	pi;
+	double  one_rad;
 	double	dir;
 	double	ray_dir;
 	void	*mlx_int;
@@ -33,7 +34,7 @@ int	deal_keys(int key, v_global *vars);
 char	**ft_cut_map(char *map);
 char	*ft_strldup(const char *s, int i);
 int	drawray_3D(v_global *vars);
-void	calc_dist(int nbr_ray, double ray_x, double ray_y, v_global *vars);
+int	calc_dist(double ray_x, double ray_y, v_global *vars);
 int	draw_vertical(v_global *vars, int x, int dist);
 int	create_img(v_global *vars);
 int	draw_pixel(char *img_addr, int r, int g, int b);
