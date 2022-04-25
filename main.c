@@ -11,8 +11,8 @@
 //HACER LAS FUNCIONES QUE MANAGEEN EN MEMORIA LOS PATH Y LOS COLORES EN MLX
 #include "./cub3d.h"
 
-int	resolution_Y = 1080;
-int	resolution_X = 1920;
+int	resolution_Y = 320;
+int	resolution_X = 530;
 int R;
 int G;
 int B;
@@ -21,11 +21,11 @@ int main()
 {
 	v_global	vars;
 
-	vars.position_X = 4;
-	vars.position_Y = 4;
+	vars.position_X = 2.1;
+	vars.position_Y = 2.1;
 	vars.pi = M_PI;
 	vars.one_rad = M_PI / 180;
-	vars.dir =M_PI / 2;
+	vars.dir =M_PI * 1.5;
 	vars.fov = 100;
 	vars.image = 0;
 	vars.ray_dir = 0;
@@ -180,6 +180,38 @@ char	*ft_strldup(const char *s, int i)
 	return (str);
 }
 
+void rgb_set_vertical(v_global *vars)
+{
+	if (vars->ray_dir > (M_PI / 2) && vars->ray_dir < (M_PI * 1.5))
+	{
+		R = 252;
+		G = 3;
+		B = 3;
+	}
+	if (vars->ray_dir < (M_PI / 2) || vars->ray_dir > (M_PI * 1.5))
+	{
+		R = 252;
+		G = 252;
+		B = 3;
+	}
+}
+
+void rgb_set_horizontal(v_global *vars)
+{
+	if (vars->ray_dir < M_PI && vars->ray_dir > 0)
+	{
+		R = 36;
+		G = 252;
+		B = 3;
+	}
+	else
+	{
+		R = 3;
+		G = 252;
+		B = 236;
+	}
+}
+
 int horizontal_coll(v_global *vars)
 {
 	double ray_x;
@@ -196,9 +228,7 @@ int horizontal_coll(v_global *vars)
 	while ((int)ray_y <= 9 && (int)ray_x <= 10 && (int)ray_y >= 0 && (int)ray_x >= 0)
 	{
 		if (vars->map[(int)ray_y][(int)ray_x] == '1')
-		{
 			return (calc_dist(ray_x, ray_y, vars));
-		}
 		if (vars->ray_dir > 0 && vars->ray_dir < vars->pi)
 			ray_y -= 1.00000000001;
 		else
@@ -227,9 +257,7 @@ int vertical_coll(v_global *vars)
 	while ((int)ray_y <= 9 && (int)ray_x <= 10 && (int)ray_y >= 0 && (int)ray_x >= 0)
 	{
 		if (vars->map[(int)ray_y][(int)ray_x] == '1')
-		{
 			return (calc_dist(ray_x, ray_y, vars));
-		}
 		if (vars->ray_dir < vars->pi / 2 || vars->ray_dir > vars->pi * 1.5)
 			ray_x += 1;
 		else
@@ -267,51 +295,21 @@ int	drawray_3D(v_global *vars)
 		dist = vertical_coll(vars);
 		dist2 = horizontal_coll(vars);
 		if ((dist < dist2 && dist2 > 0) || dist < 0)
-			dist = dist2;
-		draw_vertical(vars, nbr_ray, dist);
+		{
+			if (dist != dist2)
+				rgb_set_horizontal(vars);
+			draw_vertical(vars, nbr_ray, dist2);
+		}
+		else
+		{
+			if (dist != dist2)
+				rgb_set_vertical(vars);
+			draw_vertical(vars, nbr_ray, dist);
+		}
 		nbr_ray += 1;
 	}
 	mlx_put_image_to_window(vars->mlx_int, vars->screen, vars->image, 0, 0);
 	return(0);
-}
-
-void rgb_set(double ray_x, double ray_y, v_global *vars)
-{
-	//horizontal
-	//printf("a\n");
-	if ((ray_x - 0.99999999999) == (int)ray_x || (ray_x - (int)ray_x) == 0)
-	{
-		//oeste
-		if (vars->ray_dir > M_PI / 2 && vars->dir < (M_PI * 1.5))
-		{
-			R = 252;
-			G = 3;
-			B = 3;
-		}
-		else
-		{
-			R = 252;
-			G = 252;
-			B = 3;
-		}
-	}
-
-	else if (ray_y  == 0.99999999999 || (ray_y - (int)ray_y) == 0 )
-	{
-		//arriba
-		if (vars->ray_dir >  M_PI && vars->dir < 0)
-		{
-			R = 36;
-			G = 252;
-			B = 3;
-		}
-		else
-		{
-			R = 3;
-			G = 252;
-			B = 236;
-		}
-	}
 }
 
 int	calc_dist(double ray_x, double ray_y, v_global *vars)
@@ -332,7 +330,6 @@ int	calc_dist(double ray_x, double ray_y, v_global *vars)
 	if (not_feye > (2 * vars->pi))
 		not_feye -= 2 * vars->pi;
 	dist = dist * cos(not_feye);
-	rgb_set(ray_x, ray_y, vars);
 	return ((resolution_Y)/(dist));
 }
 
